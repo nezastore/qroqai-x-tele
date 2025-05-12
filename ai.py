@@ -1,24 +1,25 @@
-import os
-import httpx
+import requests
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes, CallbackQueryHandler
+from telegram.ext import (
+    Application, CommandHandler, MessageHandler, filters,
+    ContextTypes, CallbackQueryHandler
+)
 
 # Token Telegram Anda
 TELEGRAM_TOKEN = "7899180208:AAH4hSC12ByLARkIhB4MXghv5vSYfPjj6EA"
 
-# API Key dan Secret dari Alibaba Cloud Bailian Anda
-# Pastikan tidak ada spasi/tab di akhir string
-ALIYUN_ACCESS_KEY_ID = "LTAI5t9sJmre8954kf2tzBJ5".strip()  # Ganti dengan Access Key ID Anda
-ALIYUN_ACCESS_KEY_SECRET = "sk-8dbd5b03d3574909b15ea5f81727bfea".strip()  # API key yang Anda berikan
+# API Key Groq Anda
+GROQ_API_KEY = "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"
 
-# Endpoint API Bailian yang valid (sesuaikan region Anda)
-ALIYUN_API_ENDPOINT = "https://bailian.cn-beijing.aliyuncs.com/v1/chat/completions"
+# Endpoint API Groq
+GROQ_API_ENDPOINT = "https://api.groq.com/openai/v1/chat/completions"
 
-# Daftar model AI yang bisa dipilih pengguna
+# Daftar model AI Groq yang bisa dipilih pengguna
 AVAILABLE_MODELS = [
-    "mixtral-8x7b-32768",
-    "model-2",
-    "model-3"
+    "llama3-8b-8192",
+    "llama3-70b-8192",
+    "gemma-7b-it",
+    "mixtral-8x7b-32768"
 ]
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -29,7 +30,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     reply_markup = InlineKeyboardMarkup(keyboard)
 
     await update.message.reply_text(
-        "🤖 **NEZA AI Bot**\n"
+        "🤖 **Groq AI Bot**\n"
         "Silakan pilih model AI yang ingin Anda gunakan:",
         parse_mode="Markdown",
         reply_markup=reply_markup
@@ -65,25 +66,24 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     try:
         payload = {
+            "model": selected_model,
             "messages": [
                 {"role": "user", "content": user_message}
             ],
-            "model": selected_model,
             "temperature": 0.5,
             "max_tokens": 1024
         }
 
         headers = {
             "Content-Type": "application/json",
-            "x-acs-accesskey-id": ALIYUN_ACCESS_KEY_ID,
-            "x-acs-accesskey-secret": ALIYUN_ACCESS_KEY_SECRET,
+            "Authorization": f"Bearer {GROQ_API_KEY}"
         }
 
-        async with httpx.AsyncClient() as client:
-            response = await client.post(ALIYUN_API_ENDPOINT, headers=headers, json=payload)
-            response.raise_for_status()
-            data = response.json()
+        response = requests.post(GROQ_API_ENDPOINT, headers=headers, json=payload)
+        response.raise_for_status()
+        data = response.json()
 
+        # Struktur respons Groq mirip OpenAI: ambil konten jawaban
         ai_response = data["choices"][0]["message"]["content"]
 
         context.user_data['last_response'] = ai_response
@@ -98,6 +98,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             reply_markup=reply_markup
         )
 
+    except requests.HTTPError as http_err:
+        await update.message.reply_text(f"⚠️ HTTP error: {http_err.response.status_code} - {http_err.response.text}")
     except Exception as e:
         await update.message.reply_text(f"⚠️ Error: {str(e)}")
 
@@ -108,6 +110,7 @@ def main():
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     app.add_handler(CallbackQueryHandler(button_handler))
 
+    print("Bot berjalan... Tekan Ctrl+C untuk berhenti.")
     app.run_polling()
 
 if __name__ == "__main__":
