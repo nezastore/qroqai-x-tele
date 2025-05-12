@@ -5,32 +5,44 @@ from telegram.ext import (
     ContextTypes, CallbackQueryHandler
 )
 
-# Token Telegram Anda
+# Token Telegram Anda (tidak diubah)
 TELEGRAM_TOKEN = "7899180208:AAH4hSC12ByLARkIhB4MXghv5vSYfPjj6EA"
 
-# API Key Groq Anda
-GROQ_API_KEY = "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"
+# API Key Cohere Anda (ganti dengan API Key Anda sendiri dari https://dashboard.cohere.com/)
+COHERE_API_KEY = "hdCYDWeT0DWdHHaS3rhejoTJWqDqqWGr0GVip8AS"
 
-# Endpoint API Groq
-GROQ_API_ENDPOINT = "https://api.groq.com/openai/v1/chat/completions"
+# Endpoint API Cohere untuk generate teks
+COHERE_API_ENDPOINT = "https://api.cohere.ai/generate"
 
-# Daftar model AI Groq yang bisa dipilih pengguna
+# Daftar model AI Cohere yang bisa dipilih pengguna (contoh model yang umum tersedia)
 AVAILABLE_MODELS = [
-    "llama3-8b-8192",
-    "llama3-70b-8192",
-    "gemma-7b-it",
-    "mixtral-8x7b-32768"
+    "command-xlarge-nightly",
+    "command-large",
+    "command-medium",
+    "command-small",
+    "xlarge",
+    "large",
+    "medium",
+    "small"
 ]
 
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    keyboard = [
-        [InlineKeyboardButton(model, callback_data=f"model_{model}")]
-        for model in AVAILABLE_MODELS
-    ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
+# Membuat tombol model dengan tampilan 2 kolom agar lebih menarik
+def build_model_keyboard():
+    keyboard = []
+    row = []
+    for i, model in enumerate(AVAILABLE_MODELS, 1):
+        row.append(InlineKeyboardButton(model, callback_data=f"model_{model}"))
+        if i % 2 == 0:
+            keyboard.append(row)
+            row = []
+    if row:
+        keyboard.append(row)
+    return InlineKeyboardMarkup(keyboard)
 
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    reply_markup = build_model_keyboard()
     await update.message.reply_text(
-        "🤖 **Groq AI Bot**\n"
+        "🤖 **Cohere AI Bot**\n"
         "Halo! Silakan pilih model AI yang ingin kamu gunakan ya:",
         parse_mode="Markdown",
         reply_markup=reply_markup
@@ -67,23 +79,27 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         payload = {
             "model": selected_model,
-            "messages": [
-                {"role": "user", "content": user_message}
-            ],
-            "temperature": 0.5,
-            "max_tokens": 1024
+            "prompt": user_message,
+            "max_tokens": 300,
+            "temperature": 0.7,
+            "k": 0,
+            "p": 1,
+            "frequency_penalty": 0,
+            "presence_penalty": 0,
+            "stop_sequences": []
         }
 
         headers = {
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {GROQ_API_KEY}"
+            "Authorization": f"Bearer {COHERE_API_KEY}",
+            "Content-Type": "application/json"
         }
 
-        response = requests.post(GROQ_API_ENDPOINT, headers=headers, json=payload)
+        response = requests.post(COHERE_API_ENDPOINT, headers=headers, json=payload)
         response.raise_for_status()
         data = response.json()
 
-        ai_response = data["choices"][0]["message"]["content"]
+        # Ambil teks hasil generate dari Cohere
+        ai_response = data["generations"][0]["text"].strip()
 
         context.user_data['last_response'] = ai_response
 
