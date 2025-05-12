@@ -31,7 +31,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await update.message.reply_text(
         "🤖 **Groq AI Bot**\n"
-        "Silakan pilih model AI yang ingin Anda gunakan:",
+        "Halo! Silakan pilih model AI yang ingin kamu gunakan ya:",
         parse_mode="Markdown",
         reply_markup=reply_markup
     )
@@ -43,14 +43,14 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if data.startswith("model_"):
         selected_model = data[len("model_"):]
         context.user_data['selected_model'] = selected_model
-        await query.answer(f"Model AI dipilih: {selected_model}")
+        await query.answer(f"Kamu memilih model AI: {selected_model}")
         await query.edit_message_text(
-            f"✅ Anda telah memilih model AI: *{selected_model}*\n\n"
-            "Sekarang kirim pesan apa saja dan saya akan menjawab menggunakan model ini.",
+            f"✅ Model AI *{selected_model}* sudah dipilih.\n\n"
+            "Sekarang, kirimkan pesan apa saja, dan aku akan menjawab menggunakan model ini ya!",
             parse_mode="Markdown"
         )
     elif data == 'copy_text':
-        await query.answer("✅ Teks siap disalin!")
+        await query.answer("✅ Teks sudah siap untuk disalin!")
         await query.edit_message_reply_markup(reply_markup=None)
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -59,8 +59,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if not selected_model:
         await update.message.reply_text(
-            "⚠️ Anda belum memilih model AI.\n"
-            "Silakan gunakan perintah /start untuk memilih model terlebih dahulu."
+            "⚠️ Kamu belum memilih model AI nih.\n"
+            "Yuk, ketik /start dulu untuk memilih model yang kamu mau."
         )
         return
 
@@ -83,7 +83,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         response.raise_for_status()
         data = response.json()
 
-        # Struktur respons Groq mirip OpenAI: ambil konten jawaban
         ai_response = data["choices"][0]["message"]["content"]
 
         context.user_data['last_response'] = ai_response
@@ -99,9 +98,15 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
 
     except requests.HTTPError as http_err:
-        await update.message.reply_text(f"⚠️ HTTP error: {http_err.response.status_code} - {http_err.response.text}")
+        await update.message.reply_text(
+            f"⚠️ Aduh, ada masalah HTTP nih: {http_err.response.status_code} - {http_err.response.text}\n"
+            "Coba cek lagi ya."
+        )
     except Exception as e:
-        await update.message.reply_text(f"⚠️ Error: {str(e)}")
+        await update.message.reply_text(
+            f"⚠️ Wah, ada error nih: {str(e)}\n"
+            "Coba ulangi lagi ya."
+        )
 
 def main():
     app = Application.builder().token(TELEGRAM_TOKEN).build()
@@ -110,7 +115,7 @@ def main():
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     app.add_handler(CallbackQueryHandler(button_handler))
 
-    print("Bot berjalan... Tekan Ctrl+C untuk berhenti.")
+    print("Bot sudah berjalan... Tekan Ctrl+C untuk berhenti.")
     app.run_polling()
 
 if __name__ == "__main__":
