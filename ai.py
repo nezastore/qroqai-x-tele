@@ -9,7 +9,7 @@ TELEGRAM_TOKEN = "7899180208:AAH4hSC12ByLARkIhB4MXghv5vSYfPjj6EA"
 
 # Ganti dengan API Key dan Secret dari Alibaba Cloud Bailian Anda
 ALIYUN_ACCESS_KEY_ID = "7899180208:AAH4hSC12ByLARkIhB4MXghv5vSYfPjj6EA"
-ALIYUN_ACCESS_KEY_SECRET = "sk-8dbd5b03d3574909b15ea5f81727bfea	"
+ALIYUN_ACCESS_KEY_SECRET = "sk-8dbd5b03d3574909b15ea5f81727bfea"
 ALIYUN_API_ENDPOINT = "https://bailian.console.alibabacloud.com/api/chat/completions"  # Contoh endpoint, sesuaikan dengan dokumentasi resmi
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
